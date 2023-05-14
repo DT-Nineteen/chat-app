@@ -3,6 +3,7 @@ import React, { createContext, useState, useContext } from 'react'
 import { useEffect } from 'react'
 import axios from 'axios'
 import { BASE_URL } from '../ultils/config'
+import { Alert } from 'react-native-web'
 
 export const AuthContext = createContext()
 
@@ -14,30 +15,25 @@ export const AuthProvider = ({ children }) => {
     const login = (userName, passWord) => {
         setIsLoading(true)
 
-        AsyncStorage.setItem('userToken', '123123123')
-                // setUserToken(userInfo.user)
-                // AsyncStorage.setItem('userToken', '123123123');
 
                 setIsLoading(false)
-        // axios
-        //     .post(`http://172.20.10.5:5000/auth/login`, {
-        //         userName,
-        //         passWord,
-        //     })
-        //     .then((res) => {
-        //         console.log(res.data)
-        //         setUserInfo(res.data)
-        //         console.log(22222,userInfo)
-        //         console.log(333333,userInfo.user)
-
-        //         setUserToken(userInfo.user)
-        //         // console.log(111, userToken)
-        //         AsyncStorage.setItem('userToken', userToken)
-        //         setIsLoading(false)
-        //     })
-        //     .catch((e) => {
-        //         console.log(`Login error: ${e}`)
-        //     })
+                axios.post('http://192.168.71.104:5000/auth/login', {
+                    userName: userName,
+                    passWord: passWord,
+                })
+                    .then((res) => {
+                        console.log(1111, res.data.status);
+                        if (res.data.status === "ok") {
+                            setUserToken(res.data.user); // Fixed: Assign user token from response data
+                            AsyncStorage.setItem('userToken', res.data.user)
+                        } else {
+                            alert(res.data.status);
+                        }
+                        setIsLoading(false);
+                    })
+                    .catch((e) => {
+                        console.log(`Login error: ${e}`);
+                    });
     }
 
     const logout = () => {

@@ -1,4 +1,4 @@
-import React, { useContext, useState } from 'react'
+import React, { useContext, useEffect, useState } from 'react'
 import {
     SafeAreaView,
     View,
@@ -20,8 +20,14 @@ const LoginScreen = ({ navigation }) => {
     const [userName, setUserName] = useState(null)
     const [passWord, setPassWord] = useState(null)
 
+    useEffect(()=>{
+        console.log(passWord)
+    }, [passWord]);
+
+     
     const context = useContext(AuthContext)
     const userToken = context.userToken
+   
     const login = context.login
 
     return (
@@ -47,7 +53,7 @@ const LoginScreen = ({ navigation }) => {
                 </Text>
 
                 <InputField
-                    label={'Email ID'}
+                    label={'User Name'}
                     value={userName}
                     onChangeText={(text) => setUserName(text)}
                 />

@@ -8,7 +8,6 @@ import RegisterScreen from '../screens/RegisterScreen'
 const Stack = createNativeStackNavigator()
 
 const AuthStack = () => {
-    console.log('13453453');
     return (
         <Stack.Navigator screenOptions={{ headerShown: false }}>
             <Stack.Screen name="Walkthrough" component={Walkthrough} />

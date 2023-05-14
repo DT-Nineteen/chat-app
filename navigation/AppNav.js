@@ -21,7 +21,6 @@ const AppNav = () => {
     
     console.log(userToken)
 
-    console.log('`12')
 
     return (
         <SafeAreaProvider>
