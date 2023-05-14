@@ -8,6 +8,8 @@ import { FontAwesome, Feather, Ionicons } from '@expo/vector-icons'
 const Tab = createBottomTabNavigator()
 
 const BottomTabNavigation = () => {
+    console.log('bottomTab');
+
     return (
         <Tab.Navigator
             screenOptions={{

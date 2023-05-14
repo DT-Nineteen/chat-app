@@ -1,8 +1,10 @@
 import { View, Text, TouchableOpacity } from 'react-native'
-import React from 'react'
+import React,  { useContext } from 'react'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import PageContainer from '../components/PageContainer'
 import { COLORS, FONTS } from '../constants'
+import { AuthContext, AuthProvider } from '../context/AuthContext'
+
 import {
     AntDesign,
     MaterialIcons,
@@ -12,6 +14,15 @@ import {
 } from '@expo/vector-icons'
 
 const More = () => {
+    const context = useContext(AuthContext)
+    const userToken = context.userToken
+    const logout = context.logout
+ 
+
+    const handleLogout = () => {
+        logout()
+    }
+  
     return (
         <SafeAreaView style={{ flex: 1 }}>
             <PageContainer>
@@ -313,9 +324,7 @@ const More = () => {
                     </TouchableOpacity>
 
                     <TouchableOpacity
-                        onPress={() => {
-                            console.log('Pressed')
-                        }}
+                        onPress={() => handleLogout()}
                         style={{
                             flexDirection: 'row',
                             justifyContent: 'space-between',
@@ -335,14 +344,9 @@ const More = () => {
                                 color={COLORS.black}
                             />
                             <Text style={{ ...FONTS.h4, marginLeft: 12 }}>
-                                Invite Your Friends
+                                Logout
                             </Text>
                         </View>
-                        <MaterialIcons
-                            name="keyboard-arrow-right"
-                            size={24}
-                            color={COLORS.black}
-                        />
                     </TouchableOpacity>
                 </View>
             </PageContainer>

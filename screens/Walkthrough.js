@@ -6,6 +6,7 @@ import { images, COLORS, SIZES, FONTS } from '../constants'
 import Button from '../components/Button'
 
 export default function Walkthrough({ navigation }) {
+    console.log('`Walk');
     return (
         <SafeAreaView style={{ flex: 1 }}>
             <PageContainer>
@@ -53,7 +54,7 @@ export default function Walkthrough({ navigation }) {
 
                         <Button
                             title="Start Messaging"
-                            onPress={() => navigation.navigate('PhoneNumber')}
+                            onPress={() => navigation.navigate('LoginScreen')}
                             style={{
                                 width: '100%',
                                 paddingVertical: 12,
