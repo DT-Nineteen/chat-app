@@ -1,196 +1,133 @@
-import React, {useState} from 'react';
+import React, { useState } from 'react'
 import {
-  SafeAreaView,
-  ScrollView,
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-} from 'react-native';
+    SafeAreaView,
+    ScrollView,
+    View,
+    Text,
+    TextInput,
+    Alert,
+    TouchableOpacity,
+} from 'react-native'
 
-// import DatePicker from 'react-native-date-picker';
+import { getDatabase, ref, set } from 'firebase/database'
 
-import InputField from '../components/InputField';
+import { auth } from '../firebaseConfig'
 
-// import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
-// import Ionicons from 'react-native-vector-icons/Ionicons';
+import InputField from '../components/InputField'
+import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth'
 
-// import RegistrationSVG from '../assets/images/misc/registration.svg';
-import GoogleSVG from '../assets/images/misc/google.svg';
-import FacebookSVG from '../assets/images/misc/facebook.svg';
-import TwitterSVG from '../assets/images/misc/twitter.svg';
-import CustomButton from '../components/CustomButton';
+import CustomButton from '../components/CustomButton'
 
-const RegisterScreen = ({navigation}) => {
-  const [date, setDate] = useState(new Date());
-  const [open, setOpen] = useState(false);
-  const [dobLabel, setDobLabel] = useState('Date of Birth');
+const RegisterScreen = ({ navigation }) => {
+    const [name, setName] = useState(null)
+    const [email, setEmail] = useState(null)
+    const [password, setPassWord] = useState(null)
 
-  return (
-    <SafeAreaView style={{flex: 1, justifyContent: 'center'}}>
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        style={{paddingHorizontal: 25}}>
-        <View style={{alignItems: 'center'}}>
-          {/* <RegistrationSVG
-            height={300}
-            width={300}
-            style={{transform: [{rotate: '-5deg'}]}}
-          /> */}
-        </View>
+    const handleSignUp = async () => {
+        if (email !== '' && password !== '') {
+            try {
+                const res = await createUserWithEmailAndPassword(
+                    auth,
+                    email,
+                    password
+                )
+                console.log(res)
+                const uid = res.user.uid
+                await writeUserData(uid, name, email, '')
+                console.log(111111, uid)
 
-        <Text
-          style={{
-            fontSize: 28,
-            fontWeight: '500',
-            color: '#333',
-            marginBottom: 30,
-          }}>
-          Register
-        </Text>
+                await updateProfile(auth.currentUser, {
+                    displayName: name,
+                })
 
-        <View
-          style={{
-            flexDirection: 'row',
-            justifyContent: 'space-between',
-            marginBottom: 30,
-          }}>
-          <TouchableOpacity
-            onPress={() => {}}
-            style={{
-              borderColor: '#ddd',
-              borderWidth: 2,
-              borderRadius: 10,
-              paddingHorizontal: 30,
-              paddingVertical: 10,
-            }}>
-            {/* <GoogleSVG height={24} width={24} /> */}
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => {}}
-            style={{
-              borderColor: '#ddd',
-              borderWidth: 2,
-              borderRadius: 10,
-              paddingHorizontal: 30,
-              paddingVertical: 10,
-            }}>
-            {/* <FacebookSVG height={24} width={24} /> */}
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => {}}
-            style={{
-              borderColor: '#ddd',
-              borderWidth: 2,
-              borderRadius: 10,
-              paddingHorizontal: 30,
-              paddingVertical: 10,
-            }}>
-            {/* <TwitterSVG height={24} width={24} /> */}
-          </TouchableOpacity>
-        </View>
+                alert('User created successfully')
+                navigation.navigate('LoginScreen')
+            } catch (err) {
+                console.log(err)
+                alert(err)
+            }
+        } else {
+            alert('Fill all fields')
+        }
+    }
 
-        <Text style={{textAlign: 'center', color: '#666', marginBottom: 30}}>
-          Or, register with email ...
-        </Text>
+    const writeUserData = (userId, name, email, imageUrl) => {
+        const db = getDatabase()
+        set(ref(db, 'users/' + userId), {
+            username: name,
+            email: email,
+            profile_picture: imageUrl,
+            uuid: userId,
+        })
+    }
 
-        <InputField
-          label={'Full Name'}
-        //   icon={
-        //     <Ionicons
-        //       name="person-outline"
-        //       size={20}
-        //       color="#666"
-        //       style={{marginRight: 5}}
-        //     />
-        //   }
-        />
+    return (
+        <SafeAreaView style={{ flex: 1, justifyContent: 'center' }}>
+            <ScrollView
+                showsVerticalScrollIndicator={false}
+                style={{ paddingHorizontal: 25 }}
+            >
+                <View style={{ alignItems: 'center' }}></View>
 
-        <InputField
-          label={'Email ID'}
-          keyboardType="email-address"
-        />
+                <Text
+                    style={{
+                        fontSize: 28,
+                        fontWeight: '500',
+                        color: '#333',
+                        marginBottom: 30,
+                    }}
+                >
+                    Register
+                </Text>
+                <InputField
+                    label={'Name'}
+                    value={name}
+                    onChangeText={(text) => setName(text)}
+                />
 
-        <InputField
-          label={'Password'}
-        //   icon={
-        //     <Ionicons
-        //       name="ios-lock-closed-outline"
-        //       size={20}
-        //       color="#666"
-        //       style={{marginRight: 5}}
-        //     />
-        //   }
-          inputType="password"
-        />
+                <InputField
+                    label={'Email'}
+                    keyboardType="email-address"
+                    value={email}
+                    onChangeText={(text) => setEmail(text)}
+                />
 
-        <InputField
-          label={'Confirm Password'}
-        //   icon={
-        //     <Ionicons
-        //       name="ios-lock-closed-outline"
-        //       size={20}
-        //       color="#666"
-        //       style={{marginRight: 5}}
-        //     />
-        //   }
-          inputType="password"
-        />
+                <InputField
+                    label={'Password'}
+                    inputType="password"
+                    value={password}
+                    onChangeText={(text) => setPassWord(text)}
+                />
 
-        <View
-          style={{
-            flexDirection: 'row',
-            borderBottomColor: '#ccc',
-            borderBottomWidth: 1,
-            paddingBottom: 8,
-            marginBottom: 30,
-          }}>
-          {/* <Ionicons
-            name="calendar-outline"
-            size={20}
-            color="#666"
-            style={{marginRight: 5}}
-          /> */}
-          <TouchableOpacity onPress={() => setOpen(true)}>
-            <Text style={{color: '#666', marginLeft: 5, marginTop: 5}}>
-              {dobLabel}
-            </Text>
-          </TouchableOpacity>
-        </View>
-{/* 
-        <DatePicker
-          modal
-          open={open}
-          date={date}
-          mode={'date'}
-          maximumDate={new Date('2005-01-01')}
-          minimumDate={new Date('1980-01-01')}
-          onConfirm={date => {
-            setOpen(false);
-            setDate(date);
-            setDobLabel(date.toDateString());
-          }}
-          onCancel={() => {
-            setOpen(false);
-          }}
-        /> */}
+                {/* <InputField label={'Confirm Password'} inputType="password" /> */}
 
-        <CustomButton label={'Register'} onPress={() => {}} />
+                <CustomButton
+                    label={'Register'}
+                    onPress={() => {
+                        handleSignUp()
+                    }}
+                />
 
-        <View
-          style={{
-            flexDirection: 'row',
-            justifyContent: 'center',
-            marginBottom: 30,
-          }}>
-          <Text>Already registered?</Text>
-          <TouchableOpacity onPress={() => navigation.navigation()}>
-            <Text style={{color: '#AD40AF', fontWeight: '700'}}> Login</Text>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
-    </SafeAreaView>
-  );
-};
+                <View
+                    style={{
+                        flexDirection: 'row',
+                        justifyContent: 'center',
+                        marginBottom: 30,
+                    }}
+                >
+                    <Text>Already registered?</Text>
+                    <TouchableOpacity
+                        onPress={() => navigation.navigate('LoginScreen')}
+                    >
+                        <Text style={{ color: '#AD40AF', fontWeight: '700' }}>
+                            {' '}
+                            Login
+                        </Text>
+                    </TouchableOpacity>
+                </View>
+            </ScrollView>
+        </SafeAreaView>
+    )
+}
 
-export default RegisterScreen;
+export default RegisterScreen

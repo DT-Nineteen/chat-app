@@ -2,8 +2,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 import React, { createContext, useState, useContext } from 'react'
 import { useEffect } from 'react'
 import axios from 'axios'
-import { BASE_URL } from '../ultils/config'
-import { Alert } from 'react-native-web'
+import { signInWithEmailAndPassword } from 'firebase/auth'
+import { auth } from '../firebaseConfig'
+import { Alert } from 'react-native'
 
 export const AuthContext = createContext()
 
@@ -11,29 +12,34 @@ export const AuthProvider = ({ children }) => {
     const [isLoading, setIsLoading] = useState(false)
     const [userToken, setUserToken] = useState('')
     const [userInfo, setUserInfo] = useState(null)
+    const [userId, setUserId] = useState('')
 
-    const login = (userName, passWord) => {
+    const login = (email, password) => {
         setIsLoading(true)
+        setIsLoading(false)
+        signInWithEmailAndPassword(auth, email, password)
+            .then((res) => {
+                console.log(res)
+                if (res._tokenResponse.idToken) {
+                    console.log(222222 , res);
+                    console.log(222222 , res._tokenResponse.idToken);
 
-
+                    setUserToken(res._tokenResponse.idToken)
+                    setUserId(res.user.uid) // Fixed: Assign user token from response data
+                    AsyncStorage.setItem(
+                        'userToken',
+                        res._tokenResponse.idToken
+                    )
+                    AsyncStorage.setItem('userId', res.user.uid)
+                } else {
+                    console.log('Login error')
+                }
                 setIsLoading(false)
-                axios.post('http://192.168.71.104:5000/auth/login', {
-                    userName: userName,
-                    passWord: passWord,
-                })
-                    .then((res) => {
-                        console.log(1111, res.data.status);
-                        if (res.data.status === "ok") {
-                            setUserToken(res.data.user); // Fixed: Assign user token from response data
-                            AsyncStorage.setItem('userToken', res.data.user)
-                        } else {
-                            alert(res.data.status);
-                        }
-                        setIsLoading(false);
-                    })
-                    .catch((e) => {
-                        console.log(`Login error: ${e}`);
-                    });
+            })
+            .catch((e) => {
+                console.log(`Login error: ${e}`)
+                alert(`Login error: ${e}`)
+            })
     }
 
     const logout = () => {
@@ -59,7 +65,9 @@ export const AuthProvider = ({ children }) => {
     }, [])
 
     return (
-        <AuthContext.Provider value={{ login, logout, isLoading, userToken }}>
+        <AuthContext.Provider
+            value={{ login, logout, isLoading, userToken, userId }}
+        >
             {children}
         </AuthContext.Provider>
     )

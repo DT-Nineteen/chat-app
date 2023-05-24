@@ -7,10 +7,6 @@ import {
     TouchableOpacity,
 } from 'react-native'
 
-import LoginSVG from '../assets/images/misc/login.svg'
-import GoogleSVG from '../assets/images/misc/google.svg'
-import FacebookSVG from '../assets/images/misc/facebook.svg'
-import TwitterSVG from '../assets/images/misc/twitter.svg'
 
 import CustomButton from '../components/CustomButton'
 import InputField from '../components/InputField'
@@ -20,14 +16,13 @@ const LoginScreen = ({ navigation }) => {
     const [userName, setUserName] = useState(null)
     const [passWord, setPassWord] = useState(null)
 
-    useEffect(()=>{
+    useEffect(() => {
         console.log(passWord)
-    }, [passWord]);
+    }, [passWord])
 
-     
     const context = useContext(AuthContext)
     const userToken = context.userToken
-   
+
     const login = context.login
 
     return (

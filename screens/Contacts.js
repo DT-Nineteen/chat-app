@@ -6,23 +6,97 @@ import {
     FlatList,
     Image,
 } from 'react-native'
-import React, { useState } from 'react'
+import AsyncStorage from '@react-native-async-storage/async-storage'
+import React, { useState, useContext } from 'react'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import PageContainer from '../components/PageContainer'
 import { COLORS, FONTS } from '../constants'
 import { AntDesign, Ionicons } from '@expo/vector-icons'
 import { contacts } from '../constants/data'
 
+import { auth } from '../firebaseConfig'
+import { getAuth } from 'firebase/auth'
+import { useEffect } from 'react'
+import { ref, get, getDatabase, child } from 'firebase/database'
+
+import { AuthContext, AuthProvider } from '../context/AuthContext'
+
 const Contacts = ({ navigation }) => {
+    const context = useContext(AuthContext)
+    const [userId, setUserId] = useState('')
+    const [listUser, setListUser] = useState([])
+    const userList = [];
+    const [time, setTime] = useState(4);
+
+    useEffect(() => {
+      const interval = setInterval(() => {
+        setTime((prevTime) => prevTime - 1);
+      }, 100);
+  
+      setTimeout(() => {
+        clearInterval(interval);
+      }, 300);
+  
+      return () => clearInterval(interval);
+    }, []);
+
+    useEffect(() => {
+        AsyncStorage.getItem('userId')
+            .then((value) => {
+                if (value !== null) {
+                    setUserId(value)
+                    console.log('userID:', value)
+                } else {
+                    console.log('userID not found')
+                }
+            })
+            .catch((error) => {
+                console.error('Error getting userID:', error)
+            })
+
+        const dbRef = ref(getDatabase())
+        get(child(dbRef, 'users'))
+            .then((snapshot) => {
+                if (snapshot.exists()) {
+                    const users = snapshot.val()
+                    const userList = Object.entries(users)
+                        .filter(([uid]) => uid !== userId)
+                        .map(([uid, user]) => ({
+                            email: user.email,
+                            profile_picture: user.profile_picture,
+                            username: user.username,
+                        }))
+                    setListUser(userList)
+                    console.log(8888888, listUser)
+                } else {
+                    console.log('No data available')
+                }
+            })
+            .catch((error) => {
+                console.error(error)
+            })
+    }, [time])
+
+    // useEffect(() => {
+    //     const filteredUsers = listUser.filter((user) => user.uid !== userId);
+    //     setFilteredUsers(filteredUsers);
+    //   }, [listUser, userId]);
+
+  
+
+    // const fetchUsers = async () => {
+    //
+    // }
+
     const [search, setSearch] = useState('')
-    const [filteredUsers, setFilteredUsers] = useState(contacts)
+    const [filteredUsers, setFilteredUsers] = useState()
 
     const handleSearch = (text) => {
-        setSearch(text)
-        const filteredData = contacts.filter((user) =>
-            user.userName.toLowerCase().includes(text.toLowerCase())
-        )
-        setFilteredUsers(filteredData)
+        // setSearch(text)
+        // const filteredData = contacts.filter((user) =>
+        //     user.userName.toLowerCase().includes(text.toLowerCase())
+        // )
+        // setFilteredUsers(filteredData)
     }
 
     const renderItem = ({ item, index }) => (
@@ -30,7 +104,7 @@ const Contacts = ({ navigation }) => {
             key={index}
             onPress={() =>
                 navigation.navigate('PersonalChat', {
-                    userName: item.userName,
+                    userName: item.username,
                 })
             }
             style={[
@@ -55,32 +129,32 @@ const Contacts = ({ navigation }) => {
                     marginRight: 22,
                 }}
             >
-                {item.isOnline && item.isOnline == true && (
-                    <View
-                        style={{
-                            height: 14,
-                            width: 14,
-                            borderRadius: 7,
-                            backgroundColor: COLORS.green,
-                            borderColor: COLORS.white,
-                            borderWidth: 2,
-                            position: 'absolute',
-                            top: 14,
-                            right: 2,
-                            zIndex: 1000,
-                        }}
-                    ></View>
-                )}
+                {/* {item.isOnline && item.isOnline == true && (
+              <View
+                style={{
+                  height: 14,
+                  width: 14,
+                  borderRadius: 7,
+                  backgroundColor: COLORS.green,
+                  borderColor: COLORS.white,
+                  borderWidth: 2,
+                  position: 'absolute',
+                  top: 14,
+                  right: 2,
+                  zIndex: 1000,
+                }}
+              ></View>
+            )} */}
 
-                <Image
-                    source={item.userImg}
-                    resizeMode="contain"
-                    style={{
-                        height: 50,
-                        width: 50,
-                        borderRadius: 25,
-                    }}
-                />
+                {/* <Image
+              source={item.userImg}
+              resizeMode="contain"
+              style={{
+                height: 50,
+                width: 50,
+                borderRadius: 25,
+              }}
+            /> */}
             </View>
             <View
                 style={{
@@ -88,11 +162,11 @@ const Contacts = ({ navigation }) => {
                 }}
             >
                 <Text style={{ ...FONTS.h4, marginBottom: 4 }}>
-                    {item.userName}
+                    {item.username}
                 </Text>
-                <Text style={{ fontSize: 14, color: COLORS.secondaryGray }}>
-                    {item.lastSeen}
-                </Text>
+                {/* <Text style={{ fontSize: 14, color: COLORS.secondaryGray }}>
+              {item.lastSeen}
+            </Text> */}
             </View>
         </TouchableOpacity>
     )
@@ -156,9 +230,9 @@ const Contacts = ({ navigation }) => {
                         }}
                     >
                         <FlatList
-                            data={filteredUsers}
+                            data={listUser}
                             renderItem={renderItem}
-                            keyExtractor={(item) => item.id.toString()}
+                            // keyExtractor={(item) => item.id.toString()}
                         />
                     </View>
                 </View>
