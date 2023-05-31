@@ -12,10 +12,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import PageContainer from '../components/PageContainer'
 import { COLORS, FONTS } from '../constants'
 import { AntDesign, Ionicons } from '@expo/vector-icons'
-import { contacts } from '../constants/data'
 
-import { auth } from '../firebaseConfig'
-import { getAuth } from 'firebase/auth'
 import { useEffect } from 'react'
 import { ref, get, getDatabase, child } from 'firebase/database'
 
@@ -65,6 +62,7 @@ const Contacts = ({ navigation }) => {
                             email: user.email,
                             profile_picture: user.profile_picture,
                             username: user.username,
+                            uuid: user.uuid,
                         }))
                     setListUser(userList)
                     console.log(8888888, listUser)
@@ -104,7 +102,7 @@ const Contacts = ({ navigation }) => {
             key={index}
             onPress={() =>
                 navigation.navigate('PersonalChat', {
-                    userName: item.username,
+                    friend: item.uuid,
                 })
             }
             style={[

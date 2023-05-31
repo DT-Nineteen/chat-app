@@ -1,36 +1,107 @@
 import { View, Text, TouchableOpacity } from 'react-native'
-import React, { useEffect, useState, useCallback } from 'react'
+import React, { useEffect, useState, useCallback, useContext } from 'react'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { COLORS, SIZES, FONTS } from '../constants'
 import { StatusBar } from 'expo-status-bar'
 import { MaterialIcons, FontAwesome } from '@expo/vector-icons'
 import { GiftedChat, Send, Bubble } from 'react-native-gifted-chat'
+import { useNavigation, useRoute } from '@react-navigation/native'
+import { auth, database } from '../firebaseConfig'
 
-const PersonalChat = ({ navigation }) => {
+import { AuthContext, AuthProvider } from '../context/AuthContext'
+import {
+    collection,
+    addDoc,
+    serverTimestamp,
+    query,
+    getDocs,
+    orderBy,
+} from 'firebase/firestore'
+
+import AsyncStorage from '@react-native-async-storage/async-storage'
+
+const PersonalChat = () => {
+    const context = useContext(AuthContext)
+    const userUID = context.userId
+    const [userId, setUserId] = useState(userUID)
+    console.log(11111111111111, userUID)
+    const navigation = useNavigation()
+    const route = useRoute()
+    const { friend } = route.params
+    console.log(2222, friend)
+
     const [messages, setMessages] = useState([])
+    useEffect(() => {
+        AsyncStorage.getItem('userId')
+            .then((value) => {
+                if (value !== null) {
+                    if (userId) {
+                        console.log('userID:', userId)
+                    } else {
+                        setUserId(value)
+                        console.log('Value:', value)
+                    }
+                } else {
+                    console.log('userID not found')
+                }
+            })
+            .catch((error) => {
+                console.error('Error getting userID:', error)
+            })
+    }, [])
+
+    const getAllMessages = async () => {
+        const chatid =
+            friend > userId ? userId + '-' + friend : friend + '-' + userId
+        const messagesRef = collection(database, 'Chats', chatid, 'messages')
+        const messagesQuery = query(messagesRef, orderBy('createdAt', 'desc'))
+        const msgSnapshot = await getDocs(messagesQuery)
+        const allTheMsgs = msgSnapshot.docs.map((docSnap) => {
+            return {
+                ...docSnap.data(),
+                createdAt: docSnap.data().createdAt.toDate(),
+            }
+        })
+        setMessages(allTheMsgs)
+    }
 
     useEffect(() => {
-        setMessages([
-            {
-                _id: 1,
-                text: 'Hello developer',
-                createdAt: new Date(),
-                user: {
-                    _id: 2,
-                    name: 'React Native',
-                    avatar: 'https://placeimg.com/140/140/any',
-                },
-            },
-        ])
-    }, [])
+        getAllMessages()
+    }, [userId])
 
-    const onSend = useCallback((messages = []) => {
+    const onSend = async (msgArray) => {
+        const msg = msgArray[0]
+        const usermsg = {
+            ...msg,
+            sentBy: userId,
+            sentTo: friend,
+            createdAt: new Date(),
+        }
+
+        console.log(usermsg.sentBy, usermsg.sentTo, usermsg.createdAt)
+
         setMessages((previousMessages) =>
-            GiftedChat.append(previousMessages, messages)
+            GiftedChat.append(previousMessages, usermsg)
         )
-    }, [])
 
-    // change button of send
+        const docid =
+            friend > userId ? userId + '-' + friend : friend + '-' + userId
+
+        try {
+            const docRef = await addDoc(
+                collection(database, 'Chats', docid, 'messages'),
+                {
+                    ...usermsg,
+                    createdAt: serverTimestamp(),
+                }
+            )
+            console.log('Document written with ID: ', docRef.id)
+        } catch (error) {
+            console.error('Error adding document: ', error)
+        }
+    }
+    
+
     const renderSend = (props) => {
         return (
             <Send {...props}>
@@ -86,6 +157,7 @@ const PersonalChat = ({ navigation }) => {
                     style={{
                         flexDirection: 'row',
                         alignItems: 'center',
+                        justifyContent: 'center',
                     }}
                 >
                     <TouchableOpacity
@@ -97,8 +169,8 @@ const PersonalChat = ({ navigation }) => {
                             color={COLORS.black}
                         />
                     </TouchableOpacity>
-                    <Text style={{ ...FONTS.h4, marginLeft: 8 }}>
-                        Athalia Muri
+                    <Text style={{ ...FONTS.h4, marginLeft:10, textAlign: 'center' }}>
+                       Chats
                     </Text>
                 </View>
 
@@ -107,50 +179,15 @@ const PersonalChat = ({ navigation }) => {
                         flexDirection: 'row',
                         alignItems: 'center',
                     }}
-                >
-                    <TouchableOpacity
-                        onPress={() => console.log('search')}
-                        style={{
-                            marginRight: 8,
-                        }}
-                    >
-                        <MaterialIcons
-                            name="search"
-                            size={24}
-                            color={COLORS.black}
-                        />
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        onPress={() => console.log('Menu')}
-                        style={{
-                            marginRight: 8,
-                        }}
-                    >
-                        <MaterialIcons
-                            name="menu"
-                            size={24}
-                            color={COLORS.black}
-                        />
-                    </TouchableOpacity>
-                </View>
+                ></View>
             </View>
 
             <GiftedChat
+                style={{ flex: 1 }}
                 messages={messages}
-                onSend={(messages) => onSend(messages)}
+                onSend={(text) => onSend(text)}
                 user={{
-                    _id: 1,
-                }}
-                renderBubble={renderBubble}
-                alwaysShowSend
-                renderSend={renderSend}
-                scrollToBottom
-                textInputStyle={{
-                    borderRadius: 22,
-                    borderWidth: 1,
-                    borderColor: COLORS.gray,
-                    marginRight: 6,
-                    paddingHorizontal: 12,
+                    _id: userId,
                 }}
             />
         </SafeAreaView>

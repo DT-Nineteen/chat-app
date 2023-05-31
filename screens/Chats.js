@@ -6,23 +6,28 @@ import {
     TextInput,
     FlatList,
 } from 'react-native'
-import React, { useState } from 'react'
+import React, { useState,useContext } from 'react'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import PageContainer from '../components/PageContainer'
 import { MaterialCommunityIcons, AntDesign, Ionicons } from '@expo/vector-icons'
 import { FONTS, COLORS } from '../constants'
 import { contacts } from '../constants/data'
+import { useNavigation } from '@react-navigation/native'; 
+import { AuthContext, AuthProvider } from '../context/AuthContext'
 
-const Chats = ({ navigation }) => {
+
+const Chats = () => {
+    const navigation = useNavigation();
+  
     const [search, setSearch] = useState('')
     const [filteredUsers, setFilteredUsers] = useState(contacts)
 
     const handleSearch = (text) => {
-        setSearch(text)
-        const filteredData = contacts.filter((user) =>
-            user.userName.toLowerCase().includes(text.toLowerCase())
-        )
-        setFilteredUsers(filteredData)
+        // setSearch(text)
+        // const filteredData = contacts.filter((user) =>
+        //     user.userName.toLowerCase().includes(text.toLowerCase())
+        // )
+        // setFilteredUsers(filteredData)
     }
 
     const renderItem = ({ item, index }) => (
