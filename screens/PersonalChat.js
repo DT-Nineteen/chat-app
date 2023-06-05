@@ -1,14 +1,11 @@
 import { View, Text, TouchableOpacity } from 'react-native'
-import React, { useEffect, useState, useCallback, useContext } from 'react'
+import React, { useEffect, useState, useContext } from 'react'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { COLORS, SIZES, FONTS } from '../constants'
+import { COLORS, FONTS } from '../constants'
 import { StatusBar } from 'expo-status-bar'
 import { MaterialIcons, FontAwesome } from '@expo/vector-icons'
 import { GiftedChat, Send, Bubble } from 'react-native-gifted-chat'
 import { useNavigation, useRoute } from '@react-navigation/native'
-import { auth, database } from '../firebaseConfig'
-
-import { AuthContext, AuthProvider } from '../context/AuthContext'
 import {
     collection,
     addDoc,
@@ -16,21 +13,18 @@ import {
     query,
     getDocs,
     orderBy,
+    onSnapshot,
 } from 'firebase/firestore'
-
+import { auth, database } from '../firebaseConfig'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 
 const PersonalChat = () => {
-    const context = useContext(AuthContext)
-    const userUID = context.userId
-    const [userId, setUserId] = useState(userUID)
-    console.log(11111111111111, userUID)
+    const [userId, setUserId] = useState(null)
+    const [messages, setMessages] = useState([])
     const navigation = useNavigation()
     const route = useRoute()
     const { friend } = route.params
-    console.log(2222, friend)
 
-    const [messages, setMessages] = useState([])
     useEffect(() => {
         AsyncStorage.getItem('userId')
             .then((value) => {
@@ -50,57 +44,61 @@ const PersonalChat = () => {
             })
     }, [])
 
-    const getAllMessages = async () => {
-        const chatid =
-            friend > userId ? userId + '-' + friend : friend + '-' + userId
-        const messagesRef = collection(database, 'Chats', chatid, 'messages')
-        const messagesQuery = query(messagesRef, orderBy('createdAt', 'desc'))
-        const msgSnapshot = await getDocs(messagesQuery)
-        const allTheMsgs = msgSnapshot.docs.map((docSnap) => {
-            return {
-                ...docSnap.data(),
-                createdAt: docSnap.data().createdAt.toDate(),
-            }
-        })
-        setMessages(allTheMsgs)
-    }
-
     useEffect(() => {
-        getAllMessages()
+        const getAllMessages = async () => {
+            const chatId = friend > userId ? userId + '-' + friend : friend + '-' + userId
+            const messagesRef = collection(database, 'Chats', chatId, 'messages')
+            const messagesQuery = query(messagesRef, orderBy('createdAt', 'desc'))
+            const unsubscribe = onSnapshot(messagesQuery, (querySnapshot) => {
+                
+                const allTheMsgs = querySnapshot.docs.map((docSnap) => {
+                    const data = docSnap.data()
+                    console.log(1111111111111, data);
+                    const createdAt = data.createdAt ? new Date(data.createdAt.seconds * 1000) : null;
+                    return {
+                        ...docSnap.data(),
+                        createdAt
+                    }
+                })
+                if (!querySnapshot.metadata.hasPendingWrites) {  // <======
+                    setMessages(allTheMsgs)
+                 }
+              
+            })
+            return unsubscribe
+        }
+
+        if (userId) {
+            getAllMessages()
+        }
+
     }, [userId])
 
-    const onSend = async (msgArray) => {
-        const msg = msgArray[0]
-        const usermsg = {
-            ...msg,
+    const onSend = async (messages) => {
+        const message = messages[0]
+        const userMessage = {
+            ...message,
             sentBy: userId,
             sentTo: friend,
             createdAt: new Date(),
         }
 
-        console.log(usermsg.sentBy, usermsg.sentTo, usermsg.createdAt)
-
         setMessages((previousMessages) =>
-            GiftedChat.append(previousMessages, usermsg)
+            GiftedChat.append(previousMessages, userMessage)
         )
 
-        const docid =
+        const chatId =
             friend > userId ? userId + '-' + friend : friend + '-' + userId
 
         try {
-            const docRef = await addDoc(
-                collection(database, 'Chats', docid, 'messages'),
-                {
-                    ...usermsg,
-                    createdAt: serverTimestamp(),
-                }
-            )
-            console.log('Document written with ID: ', docRef.id)
+            await addDoc(collection(database, 'Chats', chatId, 'messages'), {
+                ...userMessage,
+                createdAt: serverTimestamp(),
+            })
         } catch (error) {
             console.error('Error adding document: ', error)
         }
     }
-    
 
     const renderSend = (props) => {
         return (
@@ -169,8 +167,14 @@ const PersonalChat = () => {
                             color={COLORS.black}
                         />
                     </TouchableOpacity>
-                    <Text style={{ ...FONTS.h4, marginLeft:10, textAlign: 'center' }}>
-                       Chats
+                    <Text
+                        style={{
+                            ...FONTS.h4,
+                            marginLeft: 10,
+                            textAlign: 'center',
+                        }}
+                    >
+                        Chats
                     </Text>
                 </View>
 
